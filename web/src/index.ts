@@ -71,13 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (targetUrl) {
-          const opId = targetUrl.split("/").pop();
-          // In Vite dev mode, navigate to operation.html?id=... or /operation/...
-          if (window.location.port === "5173") {
-            window.location.href = `/operation.html?id=${opId}`;
-          } else {
-            window.location.href = targetUrl;
-          }
+          window.location.href = targetUrl;
           return;
         }
 
@@ -87,12 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (opsRes.ok) {
           const ops = await opsRes.json();
           if (ops.length > 0) {
-            const latestId = ops[0].id;
-            if (window.location.port === "5173") {
-              window.location.href = `/operation.html?id=${latestId}`;
-            } else {
-              window.location.href = `/operation/${latestId}`;
-            }
+            window.location.href = `/operation/${ops[0].id}`;
             return;
           }
         }
