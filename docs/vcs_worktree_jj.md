@@ -18,24 +18,30 @@ Repozytorium zostało zainicjowane z flagą `--colocate`, co oznacza, że `.jj` 
 
 ---
 
-## 2. Praca z Git Worktree
+## 2. Praca z niezależnymi obszarami roboczymi (Workspaces w `jj`)
 
-Dzięki temu, że zależności i środowiska wirtualne (`.venv`, `web/node_modules`) są izolowane per-folder i ignorowane w `.gitignore`, można bezpiecznie tworzyć niezależne drzewa robocze:
+Zgodnie z zasadą projektu, do tworzenia niezależnych drzew roboczych używamy **`jj workspace`** (zamiast `git worktree`):
 
-### Tworzenie nowego worktree:
+### Tworzenie nowego workspace w `jj`:
 ```bash
-# Utworzenie nowego worktree dla gałęzi feature-x w równoległym katalogu
-git worktree add ../VocabCatcher-feature-x -b feature-x
+# Utworzenie nowego workspace dla gałęzi/funkcjonalności w równoległym katalogu
+jj workspace add ../VocabCatcher-auth --name auth -r main -m "feat(auth): initial setup"
 ```
 
-### Inicjalizacja środowiska w nowym worktree:
+### Lista aktywnych przestrzeni roboczych:
 ```bash
-cd ../VocabCatcher-feature-x
-cp ../VocabCatcher/.env .env
+jj workspace list
+```
+
+### Inicjalizacja środowiska w nowym workspace:
+```bash
+cd ../VocabCatcher-auth
+cp ../VocabCatcher-main/.env .env
 task install
 ```
 
-### Usunięcie worktree po zakończeniu pracy:
+### Usunięcie workspace po zakończeniu pracy:
 ```bash
-git worktree remove ../VocabCatcher-feature-x
+jj workspace forget auth
+rm -rf ../VocabCatcher-auth
 ```
