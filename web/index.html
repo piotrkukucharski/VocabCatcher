@@ -10,8 +10,9 @@
 <body class="min-h-screen bg-base-200 text-base-content flex flex-col justify-between">
   <!-- Navbar -->
   <header class="navbar bg-base-100 shadow-sm px-6">
-    <div class="flex-1">
-      <a class="btn btn-ghost text-2xl font-bold text-primary tracking-wide">VocabCatcher</a>
+    <div class="flex-1 gap-2">
+      <a href="/" class="btn btn-ghost text-2xl font-bold text-primary tracking-wide">VocabCatcher</a>
+      <a href="/operations" class="btn btn-sm btn-ghost">All Operations</a>
     </div>
     <div class="flex-none">
       <span class="badge badge-accent font-mono text-xs">CEFR Pipeline v1.0</span>
@@ -28,13 +29,13 @@
         </p>
 
         <form id="vocab-form" action="/api/tasks" method="POST" enctype="multipart/form-data" class="space-y-6">
-          <!-- Target Language -->
+          <!-- Target Language (Source Text Language) -->
           <div class="form-control">
             <label class="label font-medium" for="target_language">
-              <span class="label-text">Target Language to Learn</span>
+              <span class="label-text">Source Material Language (To Learn)</span>
             </label>
             <select id="target_language" name="target_language" class="select select-bordered w-full">
-              <option value="English">English</option>
+              <option value="English" selected>English</option>
               <option value="Spanish">Spanish (Español)</option>
               <option value="French">French (Français)</option>
               <option value="German">German (Deutsch)</option>
@@ -43,7 +44,31 @@
               <option value="Russian">Russian (Русский)</option>
               <option value="Japanese">Japanese (日本語)</option>
               <option value="Chinese">Chinese (中文)</option>
+              <option value="Polish">Polish (Polski)</option>
             </select>
+          </div>
+
+          <!-- Known / Native Language for Definitions -->
+          <div class="form-control">
+            <label class="label font-medium" for="native_language">
+              <span class="label-text">Known Language for Definitions (Your Language)</span>
+            </label>
+            <select id="native_language" name="native_language" class="select select-bordered w-full">
+              <option value="Polish" selected>Polish (Polski)</option>
+              <option value="English">English</option>
+              <option value="Spanish">Spanish (Español)</option>
+              <option value="French">French (Français)</option>
+              <option value="German">German (Deutsch)</option>
+              <option value="Italian">Italian (Italiano)</option>
+              <option value="Portuguese">Portuguese (Português)</option>
+              <option value="Russian">Russian (Русский)</option>
+              <option value="Ukrainian">Ukrainian (Українська)</option>
+              <option value="Japanese">Japanese (日本語)</option>
+              <option value="Chinese">Chinese (中文)</option>
+            </select>
+            <label class="label">
+              <span class="label-text-alt opacity-70">Definitions and explanations will be generated in this language (can be the same as the source language).</span>
+            </label>
           </div>
 
           <!-- CEFR Level -->

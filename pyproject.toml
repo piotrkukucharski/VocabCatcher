@@ -15,6 +15,7 @@ dependencies = [
     "python-multipart>=0.0.9",
     "genanki>=0.13.1",
     "aiofiles>=24.1.0",
+    "pypdf>=6.19.0",
 ]
 
 [build-system]
@@ -23,4 +24,11 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+]
 

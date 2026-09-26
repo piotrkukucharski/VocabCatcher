@@ -11,6 +11,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, "index.html"),
         operation: resolve(__dirname, "operation.html"),
+        operations: resolve(__dirname, "operations.html"),
       },
     },
   },

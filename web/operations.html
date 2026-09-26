@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="cupcake">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VocabCatcher - Operations Manager</title>
+  <link rel="stylesheet" href="/src/style.css">
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body class="min-h-screen bg-base-200 text-base-content flex flex-col justify-between">
+  <!-- Navbar -->
+  <header class="navbar bg-base-100 shadow-sm px-6">
+    <div class="flex-1 gap-2">
+      <a href="/" class="btn btn-ghost text-2xl font-bold text-primary tracking-wide">VocabCatcher</a>
+      <span class="badge badge-outline text-xs">Operations</span>
+    </div>
+    <div class="flex-none gap-2">
+      <a href="/" class="btn btn-sm btn-ghost">&larr; New Task</a>
+      <button id="refresh-btn" class="btn btn-sm btn-outline">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto px-4 py-8 max-w-5xl">
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h1 class="text-2xl font-bold">In-Memory Operations</h1>
+        <p class="text-sm opacity-70">Monitor real-time task statuses, open completed results, or stop running operations.</p>
+      </div>
+      <div id="stats-summary" class="text-sm font-semibold opacity-80">
+        <!-- populated dynamically -->
+      </div>
+    </div>
+
+    <!-- Operations List -->
+    <div id="operations-container" class="space-y-4">
+      <div class="card bg-base-100 shadow p-8 text-center text-base-content/70">
+        <span class="loading loading-spinner loading-md mx-auto mb-2 text-primary"></span>
+        Loading operations...
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer sm:footer-horizontal footer-center p-4 bg-base-300 text-base-content">
+    <aside>
+      <p>Powered by FastAPI, Gemini 3.8 Flash & Tailwind 4 / DaisyUI 5</p>
+    </aside>
+  </footer>
+
+  <script type="module" src="/src/operations.ts"></script>
+</body>
+</html>

@@ -45,7 +45,7 @@ tasks:
   dev:backend:
     desc: 'Run FastAPI backend server with uv and hot-reload'
     cmds:
-      - uv run uvicorn app.main:app --host {{.HOST}} --port {{.PORT}} --reload
+      - .venv/bin/uvicorn app.main:app --host {{.HOST}} --port {{.PORT}} --reload
 
   dev:frontend:
     desc: 'Run Vite development server with HMR'
@@ -57,7 +57,12 @@ tasks:
     desc: 'Build frontend and run the production backend server with uv'
     cmds:
       - task: build
-      - uv run uvicorn app.main:app --host {{.HOST}} --port {{.PORT}}
+      - .venv/bin/uvicorn app.main:app --host {{.HOST}} --port {{.PORT}}
+
+  test:
+    desc: 'Run integration and unit tests with pytest'
+    cmds:
+      - .venv/bin/pytest -v tests/
 
   docker:build:
     desc: 'Build the multi-stage Docker container image'

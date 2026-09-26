@@ -16,6 +16,7 @@ from uuid import uuid4
 import aiofiles
 import genanki
 import pypandoc
+import pypdf
 from dotenv import load_dotenv
 from fastapi import (
     Depends,
@@ -58,6 +59,9 @@ def verify_basic_auth(credentials: HTTPBasicCredentials = Depends(security)) -> 
     return credentials.username
 
 
+import time
+
+
 class OperationStatus(str, Enum):
     QUEUED = "Queued"
     PARSING = "Parsing"
@@ -65,6 +69,7 @@ class OperationStatus(str, Enum):
     PHASE2_TRANSLATING = "Phase 2: Translating in Context"
     READY = "Ready"
     FAILED = "Failed"
+    STOPPED = "Stopped"
 
 
 @dataclass
@@ -82,6 +87,7 @@ class OperationTask:
     raw_extracted_words: List[str] = field(default_factory=list)
     final_items: List[Dict[str, Any]] = field(default_factory=list)
     error: Optional[str] = None
+    created_at: float = field(default_factory=time.time)
 
 
 class ConnectionManager:
@@ -114,6 +120,7 @@ class ConnectionManager:
 
 task_queue: asyncio.Queue = asyncio.Queue()
 operations: Dict[str, OperationTask] = {}
+running_tasks: Dict[str, asyncio.Task] = {}
 ws_manager = ConnectionManager()
 ai_client: Optional[genai.Client] = None
 
@@ -156,6 +163,15 @@ def extract_text_from_file(file_bytes: bytes, filename: str) -> str:
     if ext == "txt":
         return file_bytes.decode("utf-8", errors="ignore")
 
+    if ext == "pdf":
+        reader = pypdf.PdfReader(io.BytesIO(file_bytes))
+        pages_text = []
+        for page in reader.pages:
+            t = page.extract_text()
+            if t:
+                pages_text.append(t)
+        return "\n".join(pages_text)
+
     with tempfile.NamedTemporaryFile(suffix=f".{ext}", delete=False) as tmp:
         tmp.write(file_bytes)
         tmp_path = tmp.name
@@ -173,8 +189,26 @@ def extract_youtube_transcript(url: str) -> str:
     video_id = extract_youtube_id(url)
     if not video_id:
         raise ValueError("Invalid YouTube URL provided.")
-    transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
-    return " ".join([entry["text"] for entry in transcript_list])
+
+    # In youtube-transcript-api >= 1.0, methods are on instances: ytt.fetch(video_id)
+    # In older versions, YouTubeTranscriptApi.get_transcript was a static method.
+    try:
+        if hasattr(YouTubeTranscriptApi, "get_transcript"):
+            snippets = YouTubeTranscriptApi.get_transcript(video_id)
+        else:
+            ytt = YouTubeTranscriptApi()
+            snippets = ytt.fetch(video_id)
+    except Exception as exc:
+        raise ValueError(f"Failed to fetch YouTube transcript: {str(exc)}") from exc
+
+    texts = []
+    for entry in snippets:
+        if hasattr(entry, "text"):
+            texts.append(entry.text)
+        elif isinstance(entry, dict) and "text" in entry:
+            texts.append(entry["text"])
+
+    return " ".join(texts)
 
 
 def split_into_sentences(text: str) -> List[str]:
@@ -421,12 +455,27 @@ async def run_pipeline(task: OperationTask):
 async def worker_loop():
     while True:
         task = await task_queue.get()
+        if task.status == OperationStatus.STOPPED:
+            task_queue.task_done()
+            continue
+
+        current_coro = asyncio.create_task(run_pipeline(task))
+        running_tasks[task.id] = current_coro
         try:
-            await run_pipeline(task)
+            await current_coro
+        except asyncio.CancelledError:
+            task.status = OperationStatus.STOPPED
+            task.status_detail = "Operation stopped by user."
+            await ws_manager.broadcast(
+                task.id,
+                {"status": task.status, "detail": task.status_detail, "error": task.error},
+            )
         except Exception as e:
             task.status = OperationStatus.FAILED
             task.error = str(e)
+            task.status_detail = f"Processing error: {str(e)}"
         finally:
+            running_tasks.pop(task.id, None)
             task_queue.task_done()
 
 
@@ -455,7 +504,6 @@ async def create_task(
     native_language: str = Form("English"),
     youtube_url: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None),
-    user: str = Depends(verify_basic_auth),
 ):
     op_id = str(uuid4())
     file_bytes = None
@@ -481,8 +529,51 @@ async def create_task(
     return RedirectResponse(url=f"/operation/{op_id}", status_code=status.HTTP_303_SEE_OTHER)
 
 
+@app.get("/api/operations")
+async def list_operations():
+    # Return all in-memory operations sorted from newest to oldest
+    tasks_list = []
+    for op in sorted(operations.values(), key=lambda x: getattr(x, "created_at", 0), reverse=True):
+        tasks_list.append({
+            "id": op.id,
+            "status": op.status,
+            "status_detail": op.status_detail,
+            "target_language": op.target_language,
+            "native_language": op.native_language,
+            "cefr_level": op.cefr_level,
+            "source": op.youtube_url if op.youtube_url else (op.file_name or "Uploaded Text"),
+            "items_count": len(op.final_items),
+            "error": op.error,
+            "created_at": getattr(op, "created_at", 0),
+        })
+    return tasks_list
+
+
+@app.post("/api/tasks/{op_id}/stop")
+async def stop_operation(op_id: str):
+    task = operations.get(op_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Operation not found")
+
+    if task.status in (OperationStatus.READY, OperationStatus.FAILED, OperationStatus.STOPPED):
+        return {"status": task.status, "message": "Operation already finished or stopped"}
+
+    task.status = OperationStatus.STOPPED
+    task.status_detail = "Operation stopped by user."
+
+    if op_id in running_tasks:
+        running_tasks[op_id].cancel()
+
+    await ws_manager.broadcast(
+        op_id,
+        {"status": task.status, "detail": task.status_detail, "error": task.error},
+    )
+
+    return {"status": task.status, "message": "Operation stopped successfully"}
+
+
 @app.get("/api/tasks/{op_id}")
-async def get_task_status(op_id: str, user: str = Depends(verify_basic_auth)):
+async def get_task_status(op_id: str):
     task = operations.get(op_id)
     if not task:
         raise HTTPException(status_code=404, detail="Operation not found")
@@ -491,6 +582,10 @@ async def get_task_status(op_id: str, user: str = Depends(verify_basic_auth)):
         "status": task.status,
         "detail": task.status_detail,
         "error": task.error,
+        "target_language": task.target_language,
+        "native_language": task.native_language,
+        "cefr_level": task.cefr_level,
+        "source": task.youtube_url if task.youtube_url else (task.file_name or "Uploaded Text"),
         "items": task.final_items,
     }
 
@@ -504,7 +599,6 @@ class ExportRequest(BaseModel):
 async def export_vocab(
     op_id: str,
     req: ExportRequest,
-    user: str = Depends(verify_basic_auth),
 ):
     task = operations.get(op_id)
     if not task:
@@ -604,6 +698,17 @@ async def serve_index(user: str = Depends(verify_basic_auth)):
     if not index_file.exists():
         return HTMLResponse("Frontend not built. Please run `npm run build` inside /web.", status_code=503)
     return HTMLResponse(content=index_file.read_text(encoding="utf-8"))
+
+
+@app.get("/operations", response_class=HTMLResponse)
+async def serve_operations_list(user: str = Depends(verify_basic_auth)):
+    ops_file = STATIC_DIR / "operations.html"
+    if not ops_file.exists():
+        index_file = STATIC_DIR / "index.html"
+        if index_file.exists():
+            return HTMLResponse(content=index_file.read_text(encoding="utf-8"))
+        return HTMLResponse("Frontend not built. Please run `npm run build` inside /web.", status_code=503)
+    return HTMLResponse(content=ops_file.read_text(encoding="utf-8"))
 
 
 @app.get("/operation/{op_id}", response_class=HTMLResponse)

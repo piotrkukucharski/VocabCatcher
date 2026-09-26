@@ -10,28 +10,101 @@
 <body class="min-h-screen bg-base-200 text-base-content flex flex-col justify-between">
   <!-- Navbar -->
   <header class="navbar bg-base-100 shadow-sm px-6">
-    <div class="flex-1">
+    <div class="flex-1 gap-2">
       <a href="/" class="btn btn-ghost text-2xl font-bold text-primary tracking-wide">VocabCatcher</a>
+      <a href="/operations" class="btn btn-sm btn-ghost">All Operations</a>
     </div>
-    <div class="flex-none">
+    <div class="flex-none gap-2">
+      <a href="/" class="btn btn-sm btn-outline">+ New Operation</a>
       <span id="status-badge" class="badge badge-primary font-mono text-sm px-3 py-2">Initializing</span>
     </div>
   </header>
 
   <!-- Content -->
   <main class="container mx-auto px-4 py-8 max-w-4xl">
-    <!-- Progress Indicator -->
-    <div id="loading-container" class="card bg-base-100 shadow-lg border border-base-300 p-8 text-center my-6">
-      <span class="loading loading-spinner loading-lg text-primary mx-auto mb-4"></span>
-      <h3 id="status-detail" class="text-lg font-medium mb-4">Connecting to real-time analysis pipeline...</h3>
-      <progress id="progress-bar" class="progress progress-primary w-full max-w-md mx-auto" value="10" max="100"></progress>
-      <p class="text-xs text-base-content/60 mt-4">
-        Pipeline: 1. Sentence splitting &rarr; 2. 6-Sentence Chunking &rarr; 3. Phase 1 Parallel Filtering &rarr; 4. Phase 2 Surrounding Context Definition
-      </p>
+
+    <!-- Active In-Progress Operation View -->
+    <div id="loading-container" class="space-y-6">
+      <!-- Operation Summary Header Card -->
+      <div class="card bg-base-100 shadow border border-base-300 p-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-xl font-bold">Operation in Progress</h2>
+              <span id="op-id-badge" class="font-mono text-xs badge badge-ghost">Loading...</span>
+            </div>
+            <p id="op-subtitle" class="text-sm opacity-70 mt-1">Real-time pipeline extraction</p>
+          </div>
+          <!-- Action Buttons -->
+          <div class="flex flex-wrap gap-2">
+            <button id="stop-op-btn" class="btn btn-sm btn-error btn-outline">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+              </svg>
+              Stop Operation
+            </button>
+            <a href="/" class="btn btn-sm btn-ghost">+ New Operation</a>
+            <a href="/operations" class="btn btn-sm btn-outline">All Operations</a>
+          </div>
+        </div>
+
+        <!-- Task Parameters Info Box -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-4 border-t border-base-200 text-sm">
+          <div class="bg-base-200/60 p-3 rounded-lg">
+            <span class="text-xs uppercase tracking-wide opacity-60 block">Source Language</span>
+            <span id="param-source-lang" class="font-semibold">-</span>
+          </div>
+          <div class="bg-base-200/60 p-3 rounded-lg">
+            <span class="text-xs uppercase tracking-wide opacity-60 block">Definition Language</span>
+            <span id="param-native-lang" class="font-semibold">-</span>
+          </div>
+          <div class="bg-base-200/60 p-3 rounded-lg">
+            <span class="text-xs uppercase tracking-wide opacity-60 block">Target CEFR</span>
+            <span id="param-cefr-level" class="font-semibold badge badge-outline mt-0.5">-</span>
+          </div>
+          <div class="bg-base-200/60 p-3 rounded-lg">
+            <span class="text-xs uppercase tracking-wide opacity-60 block">Input Source</span>
+            <span id="param-input-source" class="font-semibold truncate block" title="">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Pipeline Steps Progress Card -->
+      <div class="card bg-base-100 shadow border border-base-300 p-6 text-center">
+        <div class="flex items-center justify-center gap-3 mb-3">
+          <span id="progress-spinner" class="loading loading-spinner loading-md text-primary"></span>
+          <h3 id="status-detail" class="text-lg font-medium">Connecting to real-time analysis pipeline...</h3>
+        </div>
+
+        <progress id="progress-bar" class="progress progress-primary w-full max-w-xl mx-auto mb-6" value="10" max="100"></progress>
+
+        <!-- Stepper: Completed, Current, and Remaining Steps -->
+        <ul id="pipeline-steps" class="steps steps-vertical sm:steps-horizontal w-full text-xs font-medium">
+          <li id="step-queued" class="step step-primary" data-content="1">Queued</li>
+          <li id="step-parsing" class="step" data-content="2">Parsing & Split</li>
+          <li id="step-phase1" class="step" data-content="3">Phase 1: Filter Words</li>
+          <li id="step-phase2" class="step" data-content="4">Phase 2: Context Translation</li>
+          <li id="step-ready" class="step" data-content="✓">Ready</li>
+        </ul>
+      </div>
     </div>
 
-    <!-- Word Selection and Export View (Hidden until READY) -->
+    <!-- Word Selection and Export View (Visible when READY) -->
     <div id="results-container" class="hidden space-y-6">
+      <!-- Success Banner with Navigation Buttons -->
+      <div class="alert alert-success shadow">
+        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        <div class="flex-1">
+          <h3 class="font-bold">Extraction Complete!</h3>
+          <div class="text-xs opacity-90">Review words, select items to keep, and export to Anki deck or JSON.</div>
+        </div>
+        <div class="flex gap-2">
+          <a href="/" class="btn btn-sm btn-ghost">+ New Operation</a>
+          <a href="/operations" class="btn btn-sm btn-outline">All Operations</a>
+        </div>
+      </div>
+
       <div class="flex flex-col sm:flex-row justify-between items-center bg-base-100 p-4 rounded-box shadow border border-base-300 gap-4">
         <div>
           <h2 class="text-xl font-bold">Select Unknown Words</h2>
