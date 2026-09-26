@@ -317,3 +317,18 @@ async def test_scenario_7_export_vocab_json_and_anki():
         assert anki_resp.status_code == 200
         assert anki_resp.headers["content-type"].startswith("application/octet-stream")
         assert len(anki_resp.content) > 1000  # valid zip/sqlite apkg payload
+
+        # Export as Brainscape CSV
+        csv_resp = await client.post(
+            f"/api/tasks/{op_id}/export",
+            json={"format": "csv", "selected_indices": [0, 1]},
+        )
+        assert csv_resp.status_code == 200
+        assert "text/csv" in csv_resp.headers["content-type"]
+        csv_text = csv_resp.content.decode("utf-8-sig")
+        lines = [line.strip() for line in csv_text.strip().split("\n") if line.strip()]
+        # Check Brainscape header columns
+        assert lines[0] == "Q. Body,Q. Clarifier,A. Body,A. Footnote"
+        assert "controversial" in lines[1]
+        assert "kontrowersyjny" in lines[1]
+        assert "pick fights" in lines[2]

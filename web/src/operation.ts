@@ -54,6 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const selectAllBtn = document.getElementById("select-all-btn") as HTMLButtonElement;
   const deselectAllBtn = document.getElementById("deselect-all-btn") as HTMLButtonElement;
   const exportJsonBtn = document.getElementById("export-json-btn") as HTMLButtonElement;
+  const exportCsvBtn = document.getElementById("export-csv-btn") as HTMLButtonElement | null;
   const exportAnkiBtn = document.getElementById("export-anki-btn") as HTMLButtonElement;
   const stopOpBtn = document.getElementById("stop-op-btn") as HTMLButtonElement | null;
   const selectedCountSpan = document.getElementById("selected-count") as HTMLElement;
@@ -256,7 +257,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  async function triggerExport(format: "json" | "anki") {
+  async function triggerExport(format: "json" | "anki" | "csv") {
     const indices = getSelectedIndices();
     if (indices.length === 0) {
       alert("Please select at least one word to export.");
@@ -276,7 +277,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = format === "json" ? `vocabcatcher_${opId}.json` : `vocabcatcher_${opId}.apkg`;
+      if (format === "json") {
+        a.download = `vocabcatcher_${opId}.json`;
+      } else if (format === "csv") {
+        a.download = `vocabcatcher_brainscape_${opId}.csv`;
+      } else {
+        a.download = `vocabcatcher_${opId}.apkg`;
+      }
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -287,6 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (exportJsonBtn) exportJsonBtn.addEventListener("click", () => triggerExport("json"));
+  if (exportCsvBtn) exportCsvBtn.addEventListener("click", () => triggerExport("csv"));
   if (exportAnkiBtn) exportAnkiBtn.addEventListener("click", () => triggerExport("anki"));
 
   // Fetch initial metadata and status

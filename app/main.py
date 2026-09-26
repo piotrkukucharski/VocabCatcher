@@ -1,4 +1,5 @@
 import asyncio
+import csv
 import io
 import json
 import os
@@ -663,8 +664,36 @@ async def export_vocab(
             headers={"Content-Disposition": f"attachment; filename=vocabcatcher_{op_id}.apkg"},
         )
 
+    elif req.format.lower() in ("csv", "brainscape"):
+        # Brainscape multi-field CSV with standard column headers:
+        # Q. Body, Q. Clarifier, A. Body, A. Footnote
+        # Saved in UTF-8 with BOM or UTF-8 for Excel/Brainscape compatibility
+        output = io.StringIO()
+        writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
+        # Brainscape recognized header row
+        writer.writerow(["Q. Body", "Q. Clarifier", "A. Body", "A. Footnote"])
+
+        for item in selected_words:
+            term = item.get("infinitive") or item.get("phrasal_verb") or "Unknown"
+            defn = item.get("native_language_definition", "")
+            example = item.get("example_sentence", "")
+            variants = ", ".join(item.get("from_source", []))
+            
+            # Question Body: The term
+            # Question Clarifier: Text variants found in source
+            # Answer Body: Definition
+            # Answer Footnote: Leveled example sentence
+            writer.writerow([term, f"Forms: {variants}" if variants else "", defn, f'"{example}"' if example else ""])
+
+        csv_content = output.getvalue()
+        return Response(
+            content=csv_content.encode("utf-8-sig"),
+            media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": f"attachment; filename=vocabcatcher_brainscape_{op_id}.csv"},
+        )
+
     else:
-        raise HTTPException(status_code=400, detail="Invalid export format. Must be 'json' or 'anki'")
+        raise HTTPException(status_code=400, detail="Invalid export format. Must be 'json', 'anki', or 'csv'")
 
 
 # WebSocket for Live Progress Updates
