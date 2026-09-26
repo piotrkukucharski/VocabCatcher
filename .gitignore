@@ -56,3 +56,7 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Worktrees & VCS metadata
+.jj/
+
