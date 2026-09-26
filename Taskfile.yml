@@ -1,0 +1,75 @@
+version: '3'
+
+dotenv: ['.env']
+
+vars:
+  DOCKER_IMAGE: 'vocabcatcher:latest'
+  PORT: '8000'
+  HOST: '0.0.0.0'
+
+tasks:
+  default:
+    desc: 'List all available tasks'
+    cmds:
+      - task --list
+
+  install:
+    desc: 'Install all dependencies (uv for backend, npm for frontend)'
+    cmds:
+      - task: install:backend
+      - task: install:frontend
+
+  install:backend:
+    desc: 'Install Python dependencies using uv'
+    cmds:
+      - uv sync
+
+  install:frontend:
+    desc: 'Install web frontend dependencies via npm'
+    dir: web
+    cmds:
+      - npm install
+
+  build:
+    desc: 'Build frontend production assets'
+    dir: web
+    cmds:
+      - npm run build
+
+  dev:
+    desc: 'Run both backend and frontend concurrently in development mode'
+    cmds:
+      - echo "Starting development servers..."
+      - task --parallel dev:backend dev:frontend
+
+  dev:backend:
+    desc: 'Run FastAPI backend server with uv and hot-reload'
+    cmds:
+      - uv run uvicorn app.main:app --host {{.HOST}} --port {{.PORT}} --reload
+
+  dev:frontend:
+    desc: 'Run Vite development server with HMR'
+    dir: web
+    cmds:
+      - npm run dev
+
+  start:
+    desc: 'Build frontend and run the production backend server with uv'
+    cmds:
+      - task: build
+      - uv run uvicorn app.main:app --host {{.HOST}} --port {{.PORT}}
+
+  docker:build:
+    desc: 'Build the multi-stage Docker container image'
+    cmds:
+      - docker build -f infrastructure/Dockerfile -t {{.DOCKER_IMAGE}} .
+
+  docker:run:
+    desc: 'Run the application inside Docker container with .env file'
+    cmds:
+      - docker run --rm -p {{.PORT}}:8000 --env-file .env {{.DOCKER_IMAGE}}
+
+  clean:
+    desc: 'Clean up generated build artifacts and virtualenv'
+    cmds:
+      - rm -rf web/dist web/node_modules .venv

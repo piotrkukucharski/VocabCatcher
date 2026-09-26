@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="cupcake">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VocabCatcher - Processing & Vocabulary Selection</title>
+  <link rel="stylesheet" href="/src/style.css">
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body class="min-h-screen bg-base-200 text-base-content flex flex-col justify-between">
+  <!-- Navbar -->
+  <header class="navbar bg-base-100 shadow-sm px-6">
+    <div class="flex-1">
+      <a href="/" class="btn btn-ghost text-2xl font-bold text-primary tracking-wide">VocabCatcher</a>
+    </div>
+    <div class="flex-none">
+      <span id="status-badge" class="badge badge-primary font-mono text-sm px-3 py-2">Initializing</span>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <main class="container mx-auto px-4 py-8 max-w-4xl">
+    <!-- Progress Indicator -->
+    <div id="loading-container" class="card bg-base-100 shadow-lg border border-base-300 p-8 text-center my-6">
+      <span class="loading loading-spinner loading-lg text-primary mx-auto mb-4"></span>
+      <h3 id="status-detail" class="text-lg font-medium mb-4">Connecting to real-time analysis pipeline...</h3>
+      <progress id="progress-bar" class="progress progress-primary w-full max-w-md mx-auto" value="10" max="100"></progress>
+      <p class="text-xs text-base-content/60 mt-4">
+        Pipeline: 1. Sentence splitting &rarr; 2. 6-Sentence Chunking &rarr; 3. Phase 1 Parallel Filtering &rarr; 4. Phase 2 Surrounding Context Definition
+      </p>
+    </div>
+
+    <!-- Word Selection and Export View (Hidden until READY) -->
+    <div id="results-container" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-center bg-base-100 p-4 rounded-box shadow border border-base-300 gap-4">
+        <div>
+          <h2 class="text-xl font-bold">Select Unknown Words</h2>
+          <span id="selected-count" class="text-sm font-semibold text-primary">0 selected</span>
+        </div>
+        <div class="flex gap-2">
+          <button id="select-all-btn" class="btn btn-sm btn-outline">Select All</button>
+          <button id="deselect-all-btn" class="btn btn-sm btn-ghost">Deselect All</button>
+        </div>
+      </div>
+
+      <!-- Word Cards -->
+      <div id="word-list" class="space-y-3">
+        <!-- Dynamically rendered items -->
+      </div>
+
+      <!-- Export Actions Card -->
+      <div class="card bg-base-100 shadow-lg border border-base-300 p-6">
+        <h3 class="text-lg font-bold mb-2">Export Vocabulary Deck</h3>
+        <p class="text-sm text-base-content/70 mb-4">
+          Export your checked vocabulary cards directly into an Anki package (.apkg) with context & leveled examples or save as structured JSON.
+        </p>
+        <div class="flex flex-wrap gap-4 justify-end">
+          <button id="export-json-btn" class="btn btn-outline btn-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Export JSON
+          </button>
+          <button id="export-anki-btn" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            Export Anki Deck (.apkg)
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer sm:footer-horizontal footer-center p-4 bg-base-300 text-base-content">
+    <aside>
+      <p>Powered by FastAPI, Gemini 3.8 Flash & Tailwind 4 / DaisyUI 5</p>
+    </aside>
+  </footer>
+
+  <script type="module" src="/src/operation.ts"></script>
+</body>
+</html>

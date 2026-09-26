@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="cupcake">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VocabCatcher - Extract & Learn Targeted Vocabulary</title>
+  <link rel="stylesheet" href="/src/style.css">
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body class="min-h-screen bg-base-200 text-base-content flex flex-col justify-between">
+  <!-- Navbar -->
+  <header class="navbar bg-base-100 shadow-sm px-6">
+    <div class="flex-1">
+      <a class="btn btn-ghost text-2xl font-bold text-primary tracking-wide">VocabCatcher</a>
+    </div>
+    <div class="flex-none">
+      <span class="badge badge-accent font-mono text-xs">CEFR Pipeline v1.0</span>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container mx-auto px-4 py-12 max-w-2xl">
+    <div class="card bg-base-100 shadow-xl border border-base-300">
+      <div class="card-body">
+        <h2 class="card-title text-2xl font-bold mb-2">Analyze Content for Vocabulary</h2>
+        <p class="text-sm opacity-70 mb-6">
+          Upload books, documents, or paste a YouTube video link. VocabCatcher analyzes 6-sentence chunks, isolates unknown words at your CEFR level, and returns context-accurate definitions.
+        </p>
+
+        <form id="vocab-form" action="/api/tasks" method="POST" enctype="multipart/form-data" class="space-y-6">
+          <!-- Target Language -->
+          <div class="form-control">
+            <label class="label font-medium" for="target_language">
+              <span class="label-text">Target Language to Learn</span>
+            </label>
+            <select id="target_language" name="target_language" class="select select-bordered w-full">
+              <option value="English">English</option>
+              <option value="Spanish">Spanish (Español)</option>
+              <option value="French">French (Français)</option>
+              <option value="German">German (Deutsch)</option>
+              <option value="Italian">Italian (Italiano)</option>
+              <option value="Portuguese">Portuguese (Português)</option>
+              <option value="Russian">Russian (Русский)</option>
+              <option value="Japanese">Japanese (日本語)</option>
+              <option value="Chinese">Chinese (中文)</option>
+            </select>
+          </div>
+
+          <!-- CEFR Level -->
+          <div class="form-control">
+            <label class="label font-medium" for="cefr_level">
+              <span class="label-text">Your Current CEFR Level</span>
+            </label>
+            <select id="cefr_level" name="cefr_level" class="select select-bordered w-full">
+              <option value="A1">A1 - Beginner</option>
+              <option value="A2">A2 - Elementary</option>
+              <option value="B1" selected>B1 - Intermediate</option>
+              <option value="B2">B2 - Upper Intermediate</option>
+              <option value="C1">C1 - Advanced</option>
+              <option value="C2">C2 - Mastery / Proficient</option>
+            </select>
+            <label class="label">
+              <span class="label-text-alt opacity-70">VocabCatcher filters words matching this level and generates examples restricted to one level below.</span>
+            </label>
+          </div>
+
+          <!-- YouTube URL -->
+          <div class="form-control">
+            <label class="label font-medium" for="youtube_url">
+              <span class="label-text">YouTube Video Link (Optional)</span>
+            </label>
+            <input 
+              type="url" 
+              id="youtube_url" 
+              name="youtube_url" 
+              placeholder="https://www.youtube.com/watch?v=..." 
+              class="input input-bordered w-full"
+            />
+          </div>
+
+          <div class="divider text-xs uppercase opacity-50">OR Upload Document</div>
+
+          <!-- File Upload -->
+          <div class="form-control">
+            <label class="label font-medium" for="file">
+              <span class="label-text">Document / E-Book</span>
+            </label>
+            <input 
+              type="file" 
+              id="file" 
+              name="file" 
+              accept=".epub,.pdf,.docx,.odt,.rtf,.txt" 
+              class="file-input file-input-bordered w-full" 
+            />
+            <label class="label">
+              <span class="label-text-alt opacity-70">Supported formats: epub, pdf, docx, odt, rtf, txt</span>
+            </label>
+          </div>
+
+          <div class="card-actions justify-end pt-4">
+            <button type="submit" class="btn btn-primary px-8">
+              Next &rarr;
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer sm:footer-horizontal footer-center p-4 bg-base-300 text-base-content">
+    <aside>
+      <p>Powered by FastAPI, Gemini 3.8 Flash & Tailwind 4 / DaisyUI 5</p>
+    </aside>
+  </footer>
+
+  <script type="module" src="/src/index.ts"></script>
+</body>
+</html>
