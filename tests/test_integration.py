@@ -723,4 +723,3 @@ async def test_task_correlation_id_propagation(auth_cookie, monkeypatch):
         # Verify task has correlation_id stored
         assert op_id in operations
         assert operations[op_id].correlation_id == custom_corr_id
->>>>>>> conflict 1 of 1 ends
