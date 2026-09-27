@@ -60,3 +60,10 @@ Thumbs.db
 # Worktrees & VCS metadata
 .jj/
 
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+data/
+

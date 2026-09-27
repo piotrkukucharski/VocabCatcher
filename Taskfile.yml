@@ -6,6 +6,7 @@ vars:
   DOCKER_IMAGE: 'vocabcatcher:latest'
   PORT: '8000'
   HOST: '0.0.0.0'
+  DATA_DIR: '{{.DATA_DIR | default "data"}}'
 
 tasks:
   default:
@@ -14,10 +15,11 @@ tasks:
       - task --list
 
   install:
-    desc: 'Install all dependencies (uv for backend, npm for frontend)'
+    desc: 'Install all dependencies (uv for backend, npm for frontend, playwright browsers)'
     cmds:
       - task: install:backend
       - task: install:frontend
+      - task: install:browser
 
   install:backend:
     desc: 'Install Python dependencies using uv'
@@ -30,6 +32,11 @@ tasks:
     cmds:
       - npm install
 
+  install:browser:
+    desc: 'Install Playwright Chromium browser for E2E tests'
+    cmds:
+      - .venv/bin/playwright install chromium
+
   build:
     desc: 'Build frontend production assets'
     dir: web
@@ -37,24 +44,28 @@ tasks:
       - npm run build
 
   dev:
-    desc: 'Run both backend and frontend concurrently in development mode'
+    desc: 'Run both backend and frontend concurrently in development mode (showing only Python backend logs)'
     cmds:
-      - echo "Starting development servers..."
       - task --parallel dev:backend dev:frontend
 
   dev:backend:
-    desc: 'Run FastAPI backend server with uv and hot-reload'
+    desc: 'Run FastAPI backend server with uv and hot-reload in development mode'
+    env:
+      APP_ENV: 'development'
     cmds:
       - .venv/bin/uvicorn app.main:app --host {{.HOST}} --port {{.PORT}} --reload
 
   dev:frontend:
-    desc: 'Run Vite development server with HMR'
+    desc: 'Run Vite development server silently in background for HMR'
     dir: web
     cmds:
-      - npm run dev
+      - npm run dev -- --logLevel silent >/dev/null 2>&1
+    silent: true
 
   start:
     desc: 'Build frontend and run the production backend server with uv'
+    env:
+      APP_ENV: 'production'
     cmds:
       - task: build
       - .venv/bin/uvicorn app.main:app --host {{.HOST}} --port {{.PORT}}
@@ -70,9 +81,10 @@ tasks:
       - docker build -f infrastructure/Dockerfile -t {{.DOCKER_IMAGE}} .
 
   docker:run:
-    desc: 'Run the application inside Docker container with .env file'
+    desc: 'Run the application inside Docker container with .env file and persistent SQLite data volume'
     cmds:
-      - docker run --rm -p {{.PORT}}:8000 --env-file .env {{.DOCKER_IMAGE}}
+      - mkdir -p {{.DATA_DIR}}
+      - docker run --rm -p {{.PORT}}:8000 -v $(pwd)/{{.DATA_DIR}}:/app/data --env-file .env {{.DOCKER_IMAGE}}
 
   clean:
     desc: 'Clean up generated build artifacts and virtualenv'

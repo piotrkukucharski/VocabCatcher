@@ -16,6 +16,7 @@ dependencies = [
     "genanki>=0.13.1",
     "aiofiles>=24.1.0",
     "pypdf>=6.19.0",
+    "httpx>=0.28.1",
 ]
 
 [build-system]
@@ -28,6 +29,7 @@ packages = ["app"]
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",
+    "playwright>=1.63.0",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
 ]

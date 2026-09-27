@@ -37,15 +37,16 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY app/ ./app/
 COPY --from=frontend-builder /build/dist ./web/dist
 
-# Set ownership to non-root user
-RUN chown -R appuser:appgroup /app
+# Create data directory for SQLite database storage and set ownership to non-root user
+RUN mkdir -p /app/data && chown -R appuser:appgroup /app
 
 USER appuser
 
 ENV HOST=0.0.0.0 \
     PORT=8000 \
     PYTHONUNBUFFERED=1 \
-    PATH="/app/.venv/bin:$PATH"
+    PATH="/app/.venv/bin:$PATH" \
+    SQLITE_DB_PATH="/app/data/vocabcatcher.db"
 
 EXPOSE 8000
 
